@@ -13,10 +13,12 @@ st.write("Remove code blocks, unwanted HTML elements, and clean up your blog con
 st.sidebar.header("⚙️ Cleaning Options")
 remove_h2 = st.sidebar.checkbox("Remove all <h2> headings", value=True)
 remove_empty_p = st.sidebar.checkbox("Remove empty <p> tags", value=True)
+remove_all_p = st.sidebar.checkbox("Remove ALL <p> tags (keeps content)", value=False)
 remove_code = st.sidebar.checkbox("Remove <code> and <pre> blocks", value=True)
 remove_script = st.sidebar.checkbox("Remove <script> tags", value=True)
 remove_style = st.sidebar.checkbox("Remove <style> tags", value=True)
 remove_comments = st.sidebar.checkbox("Remove HTML comments", value=True)
+remove_attributes = st.sidebar.checkbox("Remove HTML attributes (data-*, class, etc.)", value=True)
 normalize_whitespace = st.sidebar.checkbox("Normalize whitespace", value=True)
 
 st.sidebar.markdown("---")
@@ -60,9 +62,19 @@ def clean_html_content(text, options):
     if options['remove_h2']:
         text = re.sub(r'<h2[^>]*>.*?</h2>', '', text, flags=re.DOTALL | re.IGNORECASE)
     
-    # Remove empty paragraph tags (including those with only &nbsp; or whitespace)
-    if options['remove_empty_p']:
+    # Remove ALL paragraph tags but keep content
+    if options['remove_all_p']:
+        text = re.sub(r'<p[^>]*>', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'</p>', '', text, flags=re.IGNORECASE)
+    
+    # Remove empty paragraph tags (including those with attributes)
+    if options['remove_empty_p'] and not options['remove_all_p']:
         text = re.sub(r'<p[^>]*>\s*(?:&nbsp;|\s)*\s*</p>', '', text, flags=re.IGNORECASE)
+    
+    # Remove HTML attributes from remaining tags
+    if options['remove_attributes']:
+        # Remove attributes but keep the tag structure
+        text = re.sub(r'<(\w+)[^>]*>', r'<\1>', text)
     
     # Normalize whitespace
     if options['normalize_whitespace']:
@@ -104,10 +116,12 @@ if uploaded_file:
                 cleaning_options = {
                     'remove_h2': remove_h2,
                     'remove_empty_p': remove_empty_p,
+                    'remove_all_p': remove_all_p,
                     'remove_code': remove_code,
                     'remove_script': remove_script,
                     'remove_style': remove_style,
                     'remove_comments': remove_comments,
+                    'remove_attributes': remove_attributes,
                     'normalize_whitespace': normalize_whitespace
                 }
                 
@@ -192,6 +206,8 @@ else:
         - **Styles**: Removes `<style>` tags
         - **H2 headings**: Removes all `<h2>` blocks
         - **Empty paragraphs**: Removes `<p>` tags with no content
+        - **All paragraphs**: Option to remove ALL `<p>` tags but keep the text content
+        - **HTML attributes**: Removes attributes like `data-*`, `class`, `id`, etc.
         - **HTML comments**: Removes `<!-- -->` comments
         - **Whitespace**: Normalizes excessive line breaks and spaces
         """)
