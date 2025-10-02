@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
+import html
 from io import BytesIO
 from html.parser import HTMLParser
 
@@ -20,6 +21,7 @@ remove_h4 = st.sidebar.checkbox("Remove all <h4> headings", value=True)
 remove_h5 = st.sidebar.checkbox("Remove all <h5> headings", value=True)
 remove_h6 = st.sidebar.checkbox("Remove all <h6> headings", value=True)
 remove_divs = st.sidebar.checkbox("Remove <div> tags (keeps content)", value=True)
+remove_tables = st.sidebar.checkbox("Remove <table> tags completely", value=True)
 remove_code = st.sidebar.checkbox("Remove <code> and <pre> blocks", value=True)
 remove_script = st.sidebar.checkbox("Remove <script> tags", value=True)
 remove_style = st.sidebar.checkbox("Remove <style> tags", value=True)
@@ -41,6 +43,7 @@ remove_br = st.sidebar.checkbox("Remove <br> tags", value=True)
 st.sidebar.subheader("Advanced Cleanup")
 remove_attributes = st.sidebar.checkbox("Remove HTML attributes (data-*, class, etc.)", value=True)
 remove_nbsp = st.sidebar.checkbox("Remove &nbsp; entities", value=True)
+remove_html_entities = st.sidebar.checkbox("Decode HTML entities (&lt; &gt; &amp; etc.)", value=True)
 normalize_whitespace = st.sidebar.checkbox("Normalize whitespace", value=True)
 
 st.sidebar.markdown("---")
@@ -63,6 +66,10 @@ def clean_html_content(text, options):
     
     original_text = text
     
+    # First, decode HTML entities if requested (do this early)
+    if options['remove_html_entities']:
+        text = html.unescape(text)
+    
     # Remove script tags and their content
     if options['remove_script']:
         text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
@@ -75,6 +82,12 @@ def clean_html_content(text, options):
     if options['remove_code']:
         text = re.sub(r'<pre[^>]*>.*?</pre>', '', text, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r'<code[^>]*>.*?</code>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    # Remove table structures completely
+    if options['remove_tables']:
+        text = re.sub(r'<table[^>]*>.*?</table>', '', text, flags=re.DOTALL | re.IGNORECASE)
+        # Also remove orphaned table tags
+        text = re.sub(r'</?(?:table|tbody|thead|tfoot|tr|td|th)[^>]*>', '', text, flags=re.IGNORECASE)
     
     # Remove HTML comments
     if options['remove_comments']:
@@ -194,6 +207,7 @@ if uploaded_file:
                     'remove_h5': remove_h5,
                     'remove_h6': remove_h6,
                     'remove_divs': remove_divs,
+                    'remove_tables': remove_tables,
                     'remove_empty_p': remove_empty_p,
                     'remove_all_p': remove_all_p,
                     'remove_code': remove_code,
@@ -209,6 +223,7 @@ if uploaded_file:
                     'remove_images': remove_images,
                     'remove_br': remove_br,
                     'remove_nbsp': remove_nbsp,
+                    'remove_html_entities': remove_html_entities,
                     'normalize_whitespace': normalize_whitespace
                 }
                 
@@ -290,6 +305,7 @@ else:
         
         **Block Removal:**
         - All heading tags (`<h1>` through `<h6>`)
+        - Table structures (`<table>`, `<tr>`, `<td>`, etc.)
         - Code blocks (`<pre>`, `<code>`)
         - Scripts (`<script>`)
         - Styles (`<style>`)
@@ -312,5 +328,6 @@ else:
         **Advanced Cleanup:**
         - HTML attributes (`data-*`, `class`, `id`, etc.)
         - `&nbsp;` entities
+        - HTML entities (`&lt;` → `<`, `&gt;` → `>`, `&amp;` → `&`)
         - Whitespace normalization
         """)
