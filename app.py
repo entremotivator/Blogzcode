@@ -11,14 +11,29 @@ st.write("Remove code blocks, unwanted HTML elements, and clean up your blog con
 
 # Sidebar configuration
 st.sidebar.header("⚙️ Cleaning Options")
+
+st.sidebar.subheader("Block Removal")
 remove_h2 = st.sidebar.checkbox("Remove all <h2> headings", value=True)
-remove_empty_p = st.sidebar.checkbox("Remove empty <p> tags", value=True)
-remove_all_p = st.sidebar.checkbox("Remove ALL <p> tags (keeps content)", value=False)
 remove_code = st.sidebar.checkbox("Remove <code> and <pre> blocks", value=True)
 remove_script = st.sidebar.checkbox("Remove <script> tags", value=True)
 remove_style = st.sidebar.checkbox("Remove <style> tags", value=True)
 remove_comments = st.sidebar.checkbox("Remove HTML comments", value=True)
+
+st.sidebar.subheader("Paragraph Options")
+remove_empty_p = st.sidebar.checkbox("Remove empty <p> tags", value=True)
+remove_all_p = st.sidebar.checkbox("Remove ALL <p> tags (keeps content)", value=False)
+
+st.sidebar.subheader("Tag & Element Cleanup")
+remove_spans = st.sidebar.checkbox("Remove <span> tags (keeps content)", value=True)
+remove_strong = st.sidebar.checkbox("Remove <strong> tags (keeps content)", value=True)
+remove_em = st.sidebar.checkbox("Remove <em> tags (keeps content)", value=True)
+remove_links = st.sidebar.checkbox("Remove <a> tags (keeps text)", value=True)
+remove_images = st.sidebar.checkbox("Remove <img> tags completely", value=True)
+remove_br = st.sidebar.checkbox("Remove <br> tags", value=True)
+
+st.sidebar.subheader("Advanced Cleanup")
 remove_attributes = st.sidebar.checkbox("Remove HTML attributes (data-*, class, etc.)", value=True)
+remove_nbsp = st.sidebar.checkbox("Remove &nbsp; entities", value=True)
 normalize_whitespace = st.sidebar.checkbox("Normalize whitespace", value=True)
 
 st.sidebar.markdown("---")
@@ -62,14 +77,41 @@ def clean_html_content(text, options):
     if options['remove_h2']:
         text = re.sub(r'<h2[^>]*>.*?</h2>', '', text, flags=re.DOTALL | re.IGNORECASE)
     
+    # Remove images completely
+    if options['remove_images']:
+        text = re.sub(r'<img[^>]*/?>', '', text, flags=re.IGNORECASE)
+    
+    # Remove br tags
+    if options['remove_br']:
+        text = re.sub(r'<br[^>]*/?>', ' ', text, flags=re.IGNORECASE)
+    
+    # Remove links but keep text content
+    if options['remove_links']:
+        text = re.sub(r'<a[^>]*>(.*?)</a>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    # Remove formatting tags but keep content
+    if options['remove_strong']:
+        text = re.sub(r'<strong[^>]*>(.*?)</strong>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    if options['remove_em']:
+        text = re.sub(r'<em[^>]*>(.*?)</em>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'<i[^>]*>(.*?)</i>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    if options['remove_spans']:
+        text = re.sub(r'<span[^>]*>(.*?)</span>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+    
     # Remove ALL paragraph tags but keep content
     if options['remove_all_p']:
         text = re.sub(r'<p[^>]*>', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'</p>', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'</p>', ' ', text, flags=re.IGNORECASE)
     
     # Remove empty paragraph tags (including those with attributes)
     if options['remove_empty_p'] and not options['remove_all_p']:
         text = re.sub(r'<p[^>]*>\s*(?:&nbsp;|\s)*\s*</p>', '', text, flags=re.IGNORECASE)
+    
+    # Remove &nbsp; entities
+    if options['remove_nbsp']:
+        text = re.sub(r'&nbsp;', ' ', text, flags=re.IGNORECASE)
     
     # Remove HTML attributes from remaining tags
     if options['remove_attributes']:
@@ -80,6 +122,7 @@ def clean_html_content(text, options):
     if options['normalize_whitespace']:
         text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)  # Multiple blank lines to double
         text = re.sub(r'[ \t]+', ' ', text)  # Multiple spaces to single
+        text = re.sub(r' +\n', '\n', text)  # Remove trailing spaces before newlines
         text = text.strip()
     
     return text
@@ -122,6 +165,13 @@ if uploaded_file:
                     'remove_style': remove_style,
                     'remove_comments': remove_comments,
                     'remove_attributes': remove_attributes,
+                    'remove_spans': remove_spans,
+                    'remove_strong': remove_strong,
+                    'remove_em': remove_em,
+                    'remove_links': remove_links,
+                    'remove_images': remove_images,
+                    'remove_br': remove_br,
+                    'remove_nbsp': remove_nbsp,
                     'normalize_whitespace': normalize_whitespace
                 }
                 
@@ -201,13 +251,27 @@ else:
         
         ### What gets cleaned:
         
-        - **Code blocks**: Removes `<pre>` and `<code>` tags with their content
-        - **Scripts**: Removes `<script>` tags (security improvement)
-        - **Styles**: Removes `<style>` tags
-        - **H2 headings**: Removes all `<h2>` blocks
-        - **Empty paragraphs**: Removes `<p>` tags with no content
-        - **All paragraphs**: Option to remove ALL `<p>` tags but keep the text content
-        - **HTML attributes**: Removes attributes like `data-*`, `class`, `id`, etc.
-        - **HTML comments**: Removes `<!-- -->` comments
-        - **Whitespace**: Normalizes excessive line breaks and spaces
+        **Block Removal:**
+        - Code blocks (`<pre>`, `<code>`)
+        - Scripts (`<script>`)
+        - Styles (`<style>`)
+        - H2 headings (`<h2>`)
+        - HTML comments (`<!-- -->`)
+        
+        **Paragraph Options:**
+        - Empty paragraphs
+        - ALL paragraph tags (optional)
+        
+        **Tag & Element Cleanup:**
+        - `<span>` tags (keeps text)
+        - `<strong>` tags (keeps text)
+        - `<em>` and `<i>` tags (keeps text)
+        - `<a>` links (keeps text)
+        - `<img>` tags (removes completely)
+        - `<br>` line breaks
+        
+        **Advanced Cleanup:**
+        - HTML attributes (`data-*`, `class`, `id`, etc.)
+        - `&nbsp;` entities
+        - Whitespace normalization
         """)
