@@ -13,7 +13,13 @@ st.write("Remove code blocks, unwanted HTML elements, and clean up your blog con
 st.sidebar.header("⚙️ Cleaning Options")
 
 st.sidebar.subheader("Block Removal")
+remove_h1 = st.sidebar.checkbox("Remove all <h1> headings", value=True)
 remove_h2 = st.sidebar.checkbox("Remove all <h2> headings", value=True)
+remove_h3 = st.sidebar.checkbox("Remove all <h3> headings", value=True)
+remove_h4 = st.sidebar.checkbox("Remove all <h4> headings", value=True)
+remove_h5 = st.sidebar.checkbox("Remove all <h5> headings", value=True)
+remove_h6 = st.sidebar.checkbox("Remove all <h6> headings", value=True)
+remove_divs = st.sidebar.checkbox("Remove <div> tags (keeps content)", value=True)
 remove_code = st.sidebar.checkbox("Remove <code> and <pre> blocks", value=True)
 remove_script = st.sidebar.checkbox("Remove <script> tags", value=True)
 remove_style = st.sidebar.checkbox("Remove <style> tags", value=True)
@@ -26,6 +32,7 @@ remove_all_p = st.sidebar.checkbox("Remove ALL <p> tags (keeps content)", value=
 st.sidebar.subheader("Tag & Element Cleanup")
 remove_spans = st.sidebar.checkbox("Remove <span> tags (keeps content)", value=True)
 remove_strong = st.sidebar.checkbox("Remove <strong> tags (keeps content)", value=True)
+remove_bold = st.sidebar.checkbox("Remove <b> tags (keeps content)", value=True)
 remove_em = st.sidebar.checkbox("Remove <em> tags (keeps content)", value=True)
 remove_links = st.sidebar.checkbox("Remove <a> tags (keeps text)", value=True)
 remove_images = st.sidebar.checkbox("Remove <img> tags completely", value=True)
@@ -73,9 +80,24 @@ def clean_html_content(text, options):
     if options['remove_comments']:
         text = re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL)
     
-    # Remove h2 blocks
+    # Remove heading blocks
+    if options['remove_h1']:
+        text = re.sub(r'<h1[^>]*>.*?</h1>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
     if options['remove_h2']:
         text = re.sub(r'<h2[^>]*>.*?</h2>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    if options['remove_h3']:
+        text = re.sub(r'<h3[^>]*>.*?</h3>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    if options['remove_h4']:
+        text = re.sub(r'<h4[^>]*>.*?</h4>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    if options['remove_h5']:
+        text = re.sub(r'<h5[^>]*>.*?</h5>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    if options['remove_h6']:
+        text = re.sub(r'<h6[^>]*>.*?</h6>', '', text, flags=re.DOTALL | re.IGNORECASE)
     
     # Remove images completely
     if options['remove_images']:
@@ -89,9 +111,17 @@ def clean_html_content(text, options):
     if options['remove_links']:
         text = re.sub(r'<a[^>]*>(.*?)</a>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
     
+    # Remove div tags but keep content
+    if options['remove_divs']:
+        text = re.sub(r'<div[^>]*>', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'</div>', '', text, flags=re.IGNORECASE)
+    
     # Remove formatting tags but keep content
     if options['remove_strong']:
         text = re.sub(r'<strong[^>]*>(.*?)</strong>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    if options['remove_bold']:
+        text = re.sub(r'<b[^>]*>(.*?)</b>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
     
     if options['remove_em']:
         text = re.sub(r'<em[^>]*>(.*?)</em>', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
@@ -157,7 +187,13 @@ if uploaded_file:
             with st.spinner("Cleaning in progress..."):
                 # Prepare cleaning options
                 cleaning_options = {
+                    'remove_h1': remove_h1,
                     'remove_h2': remove_h2,
+                    'remove_h3': remove_h3,
+                    'remove_h4': remove_h4,
+                    'remove_h5': remove_h5,
+                    'remove_h6': remove_h6,
+                    'remove_divs': remove_divs,
                     'remove_empty_p': remove_empty_p,
                     'remove_all_p': remove_all_p,
                     'remove_code': remove_code,
@@ -167,6 +203,7 @@ if uploaded_file:
                     'remove_attributes': remove_attributes,
                     'remove_spans': remove_spans,
                     'remove_strong': remove_strong,
+                    'remove_bold': remove_bold,
                     'remove_em': remove_em,
                     'remove_links': remove_links,
                     'remove_images': remove_images,
@@ -252,11 +289,12 @@ else:
         ### What gets cleaned:
         
         **Block Removal:**
+        - All heading tags (`<h1>` through `<h6>`)
         - Code blocks (`<pre>`, `<code>`)
         - Scripts (`<script>`)
         - Styles (`<style>`)
-        - H2 headings (`<h2>`)
         - HTML comments (`<!-- -->`)
+        - `<div>` tags (keeps content inside)
         
         **Paragraph Options:**
         - Empty paragraphs
@@ -265,6 +303,7 @@ else:
         **Tag & Element Cleanup:**
         - `<span>` tags (keeps text)
         - `<strong>` tags (keeps text)
+        - `<b>` bold tags (keeps text)
         - `<em>` and `<i>` tags (keeps text)
         - `<a>` links (keeps text)
         - `<img>` tags (removes completely)
