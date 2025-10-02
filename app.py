@@ -21,6 +21,7 @@ remove_h4 = st.sidebar.checkbox("Remove all <h4> headings", value=True)
 remove_h5 = st.sidebar.checkbox("Remove all <h5> headings", value=True)
 remove_h6 = st.sidebar.checkbox("Remove all <h6> headings", value=True)
 remove_divs = st.sidebar.checkbox("Remove <div> tags (keeps content)", value=True)
+remove_lists = st.sidebar.checkbox("Remove <ul>, <ol>, <li> tags (keeps content)", value=True)
 remove_tables = st.sidebar.checkbox("Remove <table> tags completely", value=True)
 remove_code = st.sidebar.checkbox("Remove <code> and <pre> blocks", value=True)
 remove_script = st.sidebar.checkbox("Remove <script> tags", value=True)
@@ -88,6 +89,10 @@ def clean_html_content(text, options):
         text = re.sub(r'<table[^>]*>.*?</table>', '', text, flags=re.DOTALL | re.IGNORECASE)
         # Also remove orphaned table tags
         text = re.sub(r'</?(?:table|tbody|thead|tfoot|tr|td|th)[^>]*>', '', text, flags=re.IGNORECASE)
+    
+    # Remove list structures but keep content
+    if options['remove_lists']:
+        text = re.sub(r'</?(?:ul|ol|li)[^>]*>', '', text, flags=re.IGNORECASE)
     
     # Remove HTML comments
     if options['remove_comments']:
@@ -207,6 +212,7 @@ if uploaded_file:
                     'remove_h5': remove_h5,
                     'remove_h6': remove_h6,
                     'remove_divs': remove_divs,
+                    'remove_lists': remove_lists,
                     'remove_tables': remove_tables,
                     'remove_empty_p': remove_empty_p,
                     'remove_all_p': remove_all_p,
@@ -305,6 +311,7 @@ else:
         
         **Block Removal:**
         - All heading tags (`<h1>` through `<h6>`)
+        - List structures (`<ul>`, `<ol>`, `<li>` - keeps text content)
         - Table structures (`<table>`, `<tr>`, `<td>`, etc.)
         - Code blocks (`<pre>`, `<code>`)
         - Scripts (`<script>`)
